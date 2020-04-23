@@ -97,4 +97,36 @@ public class LoginController implements CommunityConstant {
             logger.error("响应验证码失败:" + e.getMessage());
         }
     }
+
+    @PostMapping("/login")
+    public String login(String username, String password, String code, boolean rememberme,
+                        Model model, HttpSession session, HttpServletResponse response) {
+        // 检查验证码
+        String kaptcha = (String) session.getAttribute("kaptcha");
+        if (StringUtils.isBlank(kaptcha) || StringUtils.isBlank(code) || !kaptcha.equalsIgnoreCase(code)) {
+            model.addAttribute("codeMsg", "验证码不正确!");
+            return "/site/login";
+        }
+
+        // 检查账号,密码
+        int expiredSeconds = rememberme ? REMEMBER_EXPIRED_SECONDS : DEFAULT_EXPIRED_SECONDS;
+        Map<String, Object> map = userService.login(username, password, expiredSeconds);
+        if (map.containsKey("ticket")) {
+            Cookie cookie = new Cookie("ticket", map.get("ticket").toString());
+            cookie.setPath(contextPath);
+            cookie.setMaxAge(expiredSeconds);
+            response.addCookie(cookie);
+            return "redirect:/index";
+        } else {
+            model.addAttribute("usernameMsg", map.get("usernameMsg"));
+            model.addAttribute("passwordMsg", map.get("passwordMsg"));
+            return "/site/login";
+        }
+    }
+
+    @GetMapping("/logout")
+    public String logout(@CookieValue("ticket") String ticket) {
+        userService.logout(ticket);
+        return "redirect:/login";
+    }
 }
