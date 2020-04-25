@@ -6,6 +6,7 @@ import com.ln.community.entity.LoginTicket;
 import com.ln.community.entity.User;
 import com.ln.community.util.CommunityConstant;
 import com.ln.community.util.CommunityUtil;
+import com.ln.community.util.HostHolder;
 import com.ln.community.util.MailClient;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,8 @@ public class UserService implements CommunityConstant {
     private TemplateEngine templateEngine;
     @Autowired
     private LoginTicketMapper loginTicketMapper;
+    @Autowired
+    private HostHolder hostHolder;
 
     public User findUserById(int id) {
         return userMapper.selectById(id);
@@ -162,5 +165,37 @@ public class UserService implements CommunityConstant {
 
     public int updateHeader(int userId, String headerUrl) {
         return userMapper.updateHeader(userId, headerUrl);
+    }
+
+    public Map<String, Object> updatePwd(String oldPwd, String newPwd, String confirmPassword) {
+        Map<String, Object> map = new HashMap<>();
+
+        // 判空处理
+        if (StringUtils.isBlank(oldPwd)) {
+            map.put("oldMsg", "旧密码不能为空!");
+            return map;
+        }
+        if (StringUtils.isBlank(newPwd)) {
+            map.put("newMsg", "新密码不能为空!");
+            return map;
+        }
+        if (StringUtils.isBlank(confirmPassword)) {
+            map.put("newMsg2", "新密码2不能为空!");
+            return map;
+        }
+        if (!newPwd.equals(confirmPassword)){
+            map.put("newMsg2", "两次新密码输入不一致");
+            return map;
+        }
+        // 验证密码
+        User user = hostHolder.getUser();
+        oldPwd = CommunityUtil.md5(oldPwd + user.getSalt());
+        if (!user.getPassword().equals(oldPwd)) {
+            map.put("oldMsg", "旧密码不正确!");
+            return map;
+        }
+        newPwd = CommunityUtil.md5(newPwd + user.getSalt());
+        userMapper.updatePassword(user.getId(), newPwd);
+        return map;
     }
 }
