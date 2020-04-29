@@ -9,8 +9,16 @@ public class Message {
     private int toId;
     private String conversationId;
     private String content;
-    private int status;
+    private int status;                //0表未读，1表已读
     private Date createTime;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getFromId() {
         return fromId;

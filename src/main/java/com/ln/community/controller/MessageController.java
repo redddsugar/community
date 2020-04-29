@@ -1,8 +1,6 @@
 package com.ln.community.controller;
 
-import com.ln.community.entity.Message;
-import com.ln.community.entity.Page;
-import com.ln.community.entity.User;
+import com.ln.community.entity.*;
 import com.ln.community.service.MessageService;
 import com.ln.community.service.UserService;
 import com.ln.community.util.HostHolder;
@@ -11,11 +9,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 public class MessageController {
@@ -81,10 +78,38 @@ public class MessageController {
 
         // 私信目标
         model.addAttribute("target", getLetterTarget(conversationId));
+
+        //设置已读
+        List<Integer> ids = getLetterIds(letterList);
+        if (!ids.isEmpty()) {
+            messageService.readMessage(ids);
+        }
         return "/site/letter-detail";
     }
 
+    @PostMapping("/letter/send")
+    @ResponseBody
+    public Result sendLetter(String toName, String content) {
+        User target = userService.findUserByName(toName);
+        if (target == null) {
+            return ResultGenerator.genFailResult("不存在此用户");
+        }
 
+        Message message = new Message();
+        message.setFromId(hostHolder.getUser().getId());
+        message.setToId(target.getId());
+        //拼接conversation_id,小号在前
+        if (message.getFromId()<message.getToId()) {
+            message.setConversationId(message.getFromId()+"_"+message.getToId());
+        } else {
+            message.setConversationId(message.getToId()+"_"+message.getFromId());
+        }
+        message.setContent(content);
+        message.setCreateTime(new Date());
+        messageService.addMessage(message);
+
+        return ResultGenerator.genSuccessResult();
+    }
 
     private User getLetterTarget(String conversationId) {
         String[] ids = conversationId.split("_");
@@ -96,5 +121,18 @@ public class MessageController {
         } else {
             return userService.findUserById(id0);
         }
+    }
+
+    public List<Integer> getLetterIds(List<Message> letterList) {
+        List<Integer> ids = new ArrayList<>();
+
+        if (letterList != null) {
+            for (Message message:letterList) {
+                if (hostHolder.getUser().getId() == message.getToId() && message.getStatus() == 0) {
+                    ids.add(message.getId());
+                }
+            }
+        }
+        return ids;
     }
 }
