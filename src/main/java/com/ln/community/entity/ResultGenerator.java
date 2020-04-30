@@ -1,5 +1,6 @@
 package com.ln.community.entity;
 
+
 /**
  * 响应结果生成工具
  */
@@ -28,6 +29,11 @@ public class ResultGenerator {
     public static Result genAuthResult(String message) {
         return new Result()
                 .setCode(ResultCode.UNAUTHORIZED)
+                .setMessage(message);
+    }
+
+    public static Result genServerError(String message) {
+        return new Result().setCode(ResultCode.INTERNAL_SERVER_ERROR)
                 .setMessage(message);
     }
 }
