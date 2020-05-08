@@ -2,9 +2,13 @@ package com.ln.community.controller;
 
 import com.ln.community.annotation.LoginRequired;
 import com.ln.community.entity.User;
+import com.ln.community.service.FollowService;
+import com.ln.community.service.LikeService;
 import com.ln.community.service.UserService;
+import com.ln.community.util.CommunityConstant;
 import com.ln.community.util.CommunityUtil;
 import com.ln.community.util.HostHolder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +31,8 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/user")
-public class UserController {
-
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+@Slf4j
+public class UserController implements CommunityConstant {
 
     @Value("${community.path.upload}")
     private String uploadPath;
@@ -41,6 +44,10 @@ public class UserController {
     private UserService userService;
     @Autowired
     private HostHolder hostHolder;
+    @Autowired
+    LikeService likeService;
+    @Autowired
+    FollowService followService;
 
     @LoginRequired
     @GetMapping("/setting")
@@ -71,7 +78,7 @@ public class UserController {
             //存
             headerImage.transferTo(dest);
         } catch (IOException e){
-            logger.error("上传失败 "+e.getMessage());
+            log.error("上传失败 "+e.getMessage());
             throw new RuntimeException("上传文件失败,服务异常"+e);
         }
 
@@ -100,7 +107,7 @@ public class UserController {
                 os.write(buffer, 0 ,b);
             }
         } catch (IOException e) {
-            logger.error("图像读取失败"+e.getMessage());
+            log.error("头像读取失败"+e.getMessage());
         }
     }
 
@@ -115,5 +122,35 @@ public class UserController {
             return "/site/setting";
         }
         return "redirect:/login";
+    }
+
+    //个人主页
+    @GetMapping("/profile/{userId}")
+    public String getProfilePage(@PathVariable("userId") int userId, Model model) {
+        User user = userService.findUserById(userId);
+        if (user == null) {
+            throw new RuntimeException("该用户不存在");
+        }
+
+        //用户
+        model.addAttribute("user", user);
+        //点赞数量
+        int likeCount = likeService.findUserLikeCount(userId);
+        model.addAttribute("likeCount", likeCount);
+
+        //关注数量与粉丝数量
+        long followeeCount = followService.findFolloweeCount(userId, ENTITY_TYPE_USER);
+        long followerCount = followService.findFollowerCount(userId, ENTITY_TYPE_USER);
+        model.addAttribute("followeeCount", followeeCount);
+        model.addAttribute("followerCount", followerCount);
+
+        //是否已关注
+        boolean isFollowed = false;
+        if (hostHolder.getUser() != null) {
+             isFollowed = followService.isFollowed(hostHolder.getUser().getId(), ENTITY_TYPE_USER, userId);
+        }
+        model.addAttribute("isFollowed", isFollowed);
+
+        return "/site/profile";
     }
 }
