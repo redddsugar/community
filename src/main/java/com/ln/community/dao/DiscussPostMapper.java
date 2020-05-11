@@ -1,5 +1,6 @@
 package com.ln.community.dao;
 
+import com.ln.community.entity.Comment;
 import com.ln.community.entity.DiscussPost;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,4 +20,6 @@ public interface DiscussPostMapper {
     DiscussPost selectDiscussPostById(int id);
 
     int updateCommentCount(int id, int commentCount);
+
+    Comment selectCommentById(int id);
 }

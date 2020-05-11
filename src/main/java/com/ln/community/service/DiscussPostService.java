@@ -2,6 +2,7 @@ package com.ln.community.service;
 
 import com.ln.community.dao.DiscussPostMapper;
 
+import com.ln.community.entity.Comment;
 import com.ln.community.entity.DiscussPost;
 import com.ln.community.util.BanFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,5 +48,9 @@ public class DiscussPostService {
 
     public int updateCommentCount(int id, int commentCount) {
         return discussPostMapper.updateCommentCount(id, commentCount);
+    }
+
+    public Comment findCommentById(int id) {
+        return discussPostMapper.selectCommentById(id);
     }
 }

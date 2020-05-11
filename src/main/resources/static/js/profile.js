@@ -10,7 +10,7 @@ function follow() {
 			CONTEXT_PATH + "/follow",
 			{"entityType":3,"entityId":$(btn).prev().val()},
 			function(data) {
-				data = $.parseJSON(data);
+				// data = $.parseJSON(data);
 				if(data.code === 200) {
 					window.location.reload();
 				} else {
@@ -22,7 +22,7 @@ function follow() {
 	} else {
 		// 取消关注
 		$.post(
-			CONTEXT_PATH + "/unFollow",
+			CONTEXT_PATH + "/unfollow",
 			{"entityType":3,"entityId":$(btn).prev().val()},
 			function(data) {
 				data = $.parseJSON(data);

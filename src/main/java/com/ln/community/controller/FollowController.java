@@ -1,9 +1,7 @@
 package com.ln.community.controller;
 
-import com.ln.community.entity.Page;
-import com.ln.community.entity.Result;
-import com.ln.community.entity.ResultGenerator;
-import com.ln.community.entity.User;
+import com.ln.community.entity.*;
+import com.ln.community.event.EventProducer;
 import com.ln.community.service.FollowService;
 import com.ln.community.service.UserService;
 import com.ln.community.util.CommunityConstant;
@@ -28,6 +26,8 @@ public class FollowController implements CommunityConstant {
     HostHolder hostHolder;
     @Autowired
     UserService userService;
+    @Autowired
+    EventProducer eventProducer;
 
     @PostMapping("/follow")
     @ResponseBody
@@ -36,10 +36,19 @@ public class FollowController implements CommunityConstant {
 
         followService.follow(user.getId(), entityType, entityId);
 
+        //触发关注事件的发布
+        Event event = new Event();
+        event.setTopic(TOPIC_FOLLOW)
+                .setUsrId(hostHolder.getUser().getId())
+                .setEntityId(entityId)
+                .setEntityUserId(entityId)
+                .setEntityType(entityType);
+        eventProducer.fireEvent(event);
+
         return ResultGenerator.genSuccessResult();
     }
 
-    @PostMapping("/unFollow")
+    @PostMapping("/unfollow")
     public Result unFollow(int entityType, int entityId) {
         User user = hostHolder.getUser();
 
